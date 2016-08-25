@@ -1,13 +1,9 @@
 package com.cuga.demo.webapp;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
@@ -21,9 +17,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
-import com.mongodb.MongoClientOptions.Builder;
-import com.mongodb.ServerAddress;
 
 @Configuration
 @ComponentScan
@@ -40,32 +33,23 @@ public class Application extends SpringBootServletInitializer {
         app.run(args);
     }
 
-    /** String hosts expected value inputs such as: "localhost:27017,localhost:27017" */
+    @Autowired
+    private EmbeddedMongoServer mongoServer;
+
     @Bean
-    public MongoClient mongoClient(@Value("${mongo.db.hosts}") String hosts, @Value("${mongo.db.name}") String database,
-                    @Value("${mongo.db.username}") String username, @Value("${mongo.db.password}") String password,
-                    @Value("${mongo.db.connections}") int mongoConnections, @Value("${mongo.db.replica.set.name}") String replicaSet) {
-        log.info("Setting up mongo client");
+    public EmbeddedMongoServer mongoServer() throws Exception {
+        return new EmbeddedMongoServer();
+    }
 
-        Builder optionsBuilder = MongoClientOptions.builder().connectionsPerHost(mongoConnections);
-        if (replicaSet.trim().length() > 1) {
-            String cleanReplica = replicaSet.trim();
-            log.info(String.format("Using mongo replica set %s", cleanReplica));
-            optionsBuilder.requiredReplicaSetName(cleanReplica);
+    @Bean
+    public MongoClient mongoClient() {
+        log.info("Setting up embedded mongo client");
+        try {
+            return mongoServer().getMongoClient();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
-        MongoClientOptions options = optionsBuilder.build();
-
-        // MongoCredential credential = MongoCredential.createScramSha1Credential(username, database, password.toCharArray());
-
-        List<ServerAddress> addresses = new ArrayList<>();
-        String[] splitServerString = hosts.split(",");
-        for (String serverString : splitServerString) {
-            String[] splitHost = serverString.split(":");
-            addresses.add(new ServerAddress(splitHost[0], Integer.parseInt(splitHost[1])));
-        }
-
-        // return new MongoClient(addresses, Arrays.asList(credential), options);
-        return new MongoClient(addresses, options);
     }
 
     @Bean
@@ -87,14 +71,23 @@ public class Application extends SpringBootServletInitializer {
         return new CorsFilter(source);
     }
 
-    /** Gracefully shut down the mongo connections */
     @Bean
     DisposableBean closeDatabaseConnections() {
         return new DisposableBean() {
             @Override
             public void destroy() throws Exception {
                 log.info("Shutting down mongo connection pool");
-                mongoClient.close();
+                try {
+                    mongoClient.close();
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+                try {
+                    mongoServer.close();
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                }
+
             }
         };
     }
