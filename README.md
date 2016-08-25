@@ -11,6 +11,7 @@ On execution, hosts 2 RESTful web methods:
 
 # Running the pre-built artifact
 Download [demo-webapp-1.0.0.war](https://github.com/KalibriCuga/spring-boot-example/tree/master/demo-webapp/executable)
+
 (Or if you cloned the code via git, it will be located at spring-boot-example/demo-webapp/executable/demo-webapp-1.0.0.war)
 
 In a terminal, navigate to the directory containing the artifact and execute:
