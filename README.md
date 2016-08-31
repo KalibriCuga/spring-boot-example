@@ -59,5 +59,27 @@ An example of successfully invoking this service via the command line utility cU
 
     curl -X GET "http://localhost:8080/person/find/timmy"
     [{"id":"579d60c0b428cd1d3b8832cd","name":"timmy","age":32}]
-  
+
+
+Running the UI
+=========
+Starter project for the UI in react
+
+## Installing the code after git clone
+Execute in a terminal from within the `ui-starter` directory:
+*Note*: This step may take minutes while it downloads all the npm dependencies
+
+    npm install
+
+## Local development server for the UI
+Local watch-rebuild on file changes
+In a terminal at the `ui-starter` directory, this will have webpack rebuild on any changes immediately visible on a local machine without needing to re-run. E.g.:
+
+     npm run ui
+
+## Accessing the UI
+With the above ^ service running, use a browser to access:
+
+    http://localhost:9000
+
     
